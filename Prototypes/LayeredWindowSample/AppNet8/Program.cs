@@ -4,11 +4,16 @@ using System.Runtime.InteropServices;
 #if WINDOWS
 using System.Drawing;
 using System.IO;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace AppNet8
 {
-    public partial class MainForm : Form
+    public partial class MainWindow : Window
     {
         private const int WS_EX_LAYERED = 0x80000;
         private const int WS_EX_TRANSPARENT = 0x20;
@@ -26,9 +31,10 @@ namespace AppNet8
         private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 
         private bool isLayeredMode = true;
-        private Image? sampleImage;
+        private BitmapImage? sampleImage;
+        private System.Windows.Controls.Image imageControl;
 
-        public MainForm()
+        public MainWindow()
         {
             InitializeComponent();
             LoadSampleImage();
@@ -37,54 +43,62 @@ namespace AppNet8
 
         private void InitializeComponent()
         {
-            this.SuspendLayout();
-            // 
-            // MainForm
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.Magenta;
-            this.ClientSize = new System.Drawing.Size(1024, 1024);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.Name = "MainForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Layered Window Sample - .NET 8";
-            this.TransparencyKey = System.Drawing.Color.Magenta;
-            this.Click += new System.EventHandler(this.MainForm_Click);
-            this.Paint += new System.Windows.Forms.PaintEventHandler(this.MainForm_Paint);
-            this.ResumeLayout(false);
+            // Window properties
+            this.Width = 1024;
+            this.Height = 1024;
+            this.WindowStyle = WindowStyle.None;
+            this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            this.Title = "Layered Window Sample - .NET 8";
+            this.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 255)); // Magenta
+            this.AllowsTransparency = true;
+            
+            // Create image control
+            imageControl = new System.Windows.Controls.Image();
+            imageControl.Stretch = Stretch.Fill;
+            
+            // Set content
+            this.Content = imageControl;
+            
+            // Event handlers
+            this.MouseLeftButtonDown += MainWindow_MouseLeftButtonDown;
         }
 
         private void LoadSampleImage()
         {
             try
-            {
-                string imagePath = Path.Combine(Application.StartupPath, "sample.png");
+        {
+                string imagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sample.png");
                 if (File.Exists(imagePath))
                 {
-                    sampleImage = Image.FromFile(imagePath);
+                    sampleImage = new BitmapImage(new Uri(imagePath, UriKind.Absolute));
                 }
                 else
                 {
                     // If sample.png doesn't exist, create a simple fallback image
                     CreateFallbackImage();
                 }
+                
+                if (sampleImage != null)
+                {
+                    imageControl.Source = sampleImage;
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"画像の読み込みに失敗しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"画像の読み込みに失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
                 CreateFallbackImage();
             }
         }
 
         private void CreateFallbackImage()
         {
-            sampleImage = new Bitmap(1024, 1024);
-            using (Graphics g = Graphics.FromImage(sampleImage))
+            // Create a fallback image using Drawing.Bitmap and convert to WPF BitmapSource
+            var bitmap = new Bitmap(1024, 1024);
+            using (Graphics g = Graphics.FromImage(bitmap))
             {
-                g.Clear(Color.Transparent);
+                g.Clear(System.Drawing.Color.Transparent);
                 using (Font font = new Font("Arial", 120, FontStyle.Bold))
-                using (SolidBrush brush = new SolidBrush(Color.Black))
+                using (SolidBrush brush = new SolidBrush(System.Drawing.Color.Black))
                 {
                     SizeF textSize = g.MeasureString("Sample", font);
                     float x = (1024 - textSize.Width) / 2;
@@ -92,56 +106,81 @@ namespace AppNet8
                     g.DrawString("Sample", font, brush, x, y);
                 }
             }
+            
+            // Convert System.Drawing.Bitmap to WPF BitmapSource
+            sampleImage = ConvertBitmapToBitmapImage(bitmap);
+            if (sampleImage != null)
+            {
+                imageControl.Source = sampleImage;
+            }
+            bitmap.Dispose();
+        }
+        
+        private BitmapImage? ConvertBitmapToBitmapImage(Bitmap bitmap)
+        {
+            try
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    bitmap.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
+                    memoryStream.Position = 0;
+                    
+                    var bitmapImage = new BitmapImage();
+                    bitmapImage.BeginInit();
+                    bitmapImage.StreamSource = memoryStream;
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.EndInit();
+                    bitmapImage.Freeze();
+                    
+                    return bitmapImage;
+                }
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private void SetupLayeredWindow()
         {
+            var windowInteropHelper = new WindowInteropHelper(this);
+            var hwnd = windowInteropHelper.Handle;
+            
+            if (hwnd == IntPtr.Zero)
+            {
+                // If handle is not created yet, wait for loaded event
+                this.Loaded += (s, e) => SetupLayeredWindow();
+                return;
+            }
+
             if (isLayeredMode)
             {
                 // Set layered window style
-                int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
-                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle | WS_EX_LAYERED);
+                int currentStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                SetWindowLong(hwnd, GWL_EXSTYLE, currentStyle | WS_EX_LAYERED);
                 
                 // Make magenta color transparent
-                SetLayeredWindowAttributes(this.Handle, 0xFF00FF, 255, LWA_COLORKEY);
+                SetLayeredWindowAttributes(hwnd, 0xFF00FF, 255, LWA_COLORKEY);
                 
-                this.FormBorderStyle = FormBorderStyle.None;
+                this.WindowStyle = WindowStyle.None;
                 this.ShowInTaskbar = false;
             }
             else
             {
                 // Remove layered window style
-                int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
-                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle & ~WS_EX_LAYERED);
+                int currentStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                SetWindowLong(hwnd, GWL_EXSTYLE, currentStyle & ~WS_EX_LAYERED);
                 
-                this.FormBorderStyle = FormBorderStyle.Sizable;
+                this.WindowStyle = WindowStyle.SingleBorderWindow;
                 this.ShowInTaskbar = true;
-                this.BackColor = SystemColors.Control;
+                this.Background = SystemColors.ControlBrush;
             }
         }
 
-        private void MainForm_Paint(object sender, PaintEventArgs e)
-        {
-            if (sampleImage != null)
-            {
-                e.Graphics.DrawImage(sampleImage, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
-            }
-        }
-
-        private void MainForm_Click(object sender, EventArgs e)
+        private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             isLayeredMode = !isLayeredMode;
             SetupLayeredWindow();
-            this.Invalidate();
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                sampleImage?.Dispose();
-            }
-            base.Dispose(disposing);
         }
     }
 }
@@ -155,9 +194,8 @@ namespace AppNet8
         static void Main()
         {
 #if WINDOWS
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            var app = new System.Windows.Application();
+            app.Run(new MainWindow());
 #else
             Console.WriteLine("Layered Window Sample - .NET 8");
             Console.WriteLine("このアプリケーションはWindows環境でのみ動作します。");

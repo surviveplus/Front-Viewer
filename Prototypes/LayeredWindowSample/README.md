@@ -5,11 +5,11 @@
 ## プロジェクト構成
 
 ### AppNet8
-- .NET 8を使用したWindows Formsアプリケーション
+- .NET 8を使用したWPFアプリケーション
 - 最新の.NET機能とC#機能を活用
 
 ### AppDotNetFramework48
-- .NET Framework 4.8を使用したWindows Formsアプリケーション
+- .NET Framework 4.8を使用したWPFアプリケーション
 - 従来の.NET Frameworkとの互換性を確保
 
 ## 機能
