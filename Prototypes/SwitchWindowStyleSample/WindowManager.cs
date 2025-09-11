@@ -80,7 +80,7 @@ namespace SwitchWindowStyleSample
         
         private void PositionWindow(Window window, bool isTransparent)
         {
-            if (isTransparent && normalWindow != null && normalWindow.IsVisible)
+            if (isTransparent && normalWindow != null )
             {
                 // Transparent window should be positioned to align content with normal window
                 // Account for the frame size of the normal window
@@ -93,7 +93,7 @@ namespace SwitchWindowStyleSample
                 window.Width = normalWindow.Width - frameThickness.Left - frameThickness.Right;
                 window.Height = normalWindow.Height - frameThickness.Top - frameThickness.Bottom - captionHeight;
             }
-            else if (!isTransparent && transparentWindow != null && transparentWindow.IsVisible)
+            else if (!isTransparent && transparentWindow != null )
             {
                 // Normal window should be positioned to align content with transparent window
                 var frameThickness = SystemParameters.WindowNonClientFrameThickness;
