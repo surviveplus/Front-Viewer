@@ -2,10 +2,11 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <StartupObject>SwitchWindowStyleSample.Program</StartupObject>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
