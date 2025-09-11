@@ -25,7 +25,7 @@ namespace SwitchWindowStyleSample
             ResizeMode = ResizeMode.NoResize;
             AllowsTransparency = true;
             Background = Brushes.Transparent;
-            ShowInTaskbar = false;
+            ShowInTaskbar = true;
             Topmost = true;
             
             // Create image control
