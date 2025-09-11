@@ -1,17 +1,21 @@
-# SwitchWindowStyleSample
+# ImageResizableSample
 
-Window の枠の表示・非表示の切り替えを2つのウィンドウの切り替えで再現するサンプルアプリケーションです。
+Window の枠の表示・非表示の切り替えを2つのウィンドウの切り替えで再現し、マウスホイールで画像の拡大縮小機能を追加したサンプルアプリケーションです。
 
 ## 概要
 
-既存の LayeredWindowSample では、WindowStyle を動的に変更する際にエラーが発生する問題がありました。
-このサンプルでは、2つの独立したウィンドウを使用してこの問題を解決しています。
+SwitchWindowStyleSample をベースに、画像の拡大縮小機能を追加しました。
+マウスホイールによる画像の拡大・縮小と、スクロール機能を実装しています。
 
 ## 機能
 
-- **通常ウィンドウ**: 標準的な枠付きウィンドウでサンプル画像を表示
+- **通常ウィンドウ**: 標準的な枠付きウィンドウでサンプル画像を表示、スクロール対応
 - **透明ウィンドウ**: 枠なし・背景透明のウィンドウでサンプル画像を表示
 - **ワンクリック切り替え**: 画像をクリックすることで2つのウィンドウを切り替え
+- **マウスホイール拡大縮小**: マウスホイールで画像を拡大・縮小（10%～1000%）
+- **キーボードリセット**: Ctrl+0で100%表示に戻す
+- **ズーム同期**: ウィンドウ切り替え時にズーム率を維持
+- **スクロール対応**: 画像がウィンドウより大きい時はスクロール可能
 - **位置の一致**: 枠のサイズを計算し、画像の表示位置が切り替え時に変わらないように調整
 - **適切なリソース管理**: 一方のウィンドウが閉じられた時に、もう一方も適切に解放
 
@@ -22,43 +26,42 @@ Window の枠の表示・非表示の切り替えを2つのウィンドウの切
 - **UI フレームワーク**: WPF
 - **ターゲット環境**: Windows (Any CPU)
 
-## 解決した問題
-
-1. **SetLayeredWindowAttributes 不要**: WPF の `AllowsTransparency = true` を使用することで、Win32 API を直接呼び出す必要がない
-2. **WindowStyle 変更エラー回避**: ウィンドウ表示後の WindowStyle 変更によるエラーを、2つの独立したウィンドウで回避
-3. **画像位置の一致**: システムパラメータを使用して枠のサイズを計算し、切り替え時の画像位置を維持
-
 ## 使用方法
 
 ### Windows 環境での実行
 
 ```bash
-cd Prototypes/SwitchWindowStyleSample
+cd Prototypes/ImageResizableSample
 dotnet run
 ```
 
 ### ビルド
 
 ```bash
-dotnet build SwitchWindowStyleSample.sln
+dotnet build ImageResizableSample.sln
 ```
 
-### クリック操作
+### 操作方法
 
+#### 画像操作
+- **マウスホイール**: 画像の拡大・縮小
+- **Ctrl + 0**: 100%表示にリセット
+
+#### ウィンドウ切り替え
 - **通常ウィンドウ表示中**: 画像をクリックすると透明ウィンドウに切り替わります
 - **透明ウィンドウ表示中**: 画像をダブルクリックすると通常ウィンドウに切り替わります（シングルクリックではドラッグ開始）
 - **透明ウィンドウ**: ドラッグで移動可能
 
 ## ファイル構成
 
-- `SwitchWindowStyleSample.sln` - ソリューションファイル
-- `SwitchWindowStyleSample.csproj` - プロジェクトファイル
+- `ImageResizableSample.sln` - ソリューションファイル
+- `ImageResizableSample.csproj` - プロジェクトファイル
 - `Program.cs` - エントリーポイント
 - `App.xaml` / `App.xaml.cs` - WPF アプリケーション
 - `WindowManager.cs` - ウィンドウ管理クラス
-- `NormalWindow.cs` - 通常ウィンドウクラス
+- `NormalWindow.cs` - 通常ウィンドウクラス（ScrollViewer付き）
 - `TransparentWindow.cs` - 透明ウィンドウクラス
-- `sample.png` - サンプル画像（LayeredWindowSample からコピー）
+- `sample.png` - サンプル画像
 
 ## 非 Windows 環境
 

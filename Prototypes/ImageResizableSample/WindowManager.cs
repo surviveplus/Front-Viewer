@@ -12,6 +12,7 @@ namespace ImageResizableSample
         private TransparentWindow? transparentWindow;
         private BitmapImage? sampleImage;
         private bool isTransparentMode = false;
+        private double currentZoomFactor = 1.0; // Track zoom level across windows
         
         public WindowManager()
         {
@@ -40,11 +41,20 @@ namespace ImageResizableSample
         
         public void ShowNormalWindow()
         {
+            // Sync zoom from transparent window if it exists
+            if (transparentWindow != null)
+            {
+                currentZoomFactor = transparentWindow.ZoomFactor;
+            }
+            
             if (normalWindow == null)
             {
                 normalWindow = new NormalWindow(this, sampleImage);
                 normalWindow.Closed += OnWindowClosed;
             }
+            
+            // Apply current zoom factor
+            normalWindow.ZoomFactor = currentZoomFactor;
             
             HideTransparentWindow();
             PositionWindow(normalWindow, false);
@@ -54,16 +64,41 @@ namespace ImageResizableSample
         
         public void ShowTransparentWindow()
         {
+            // Sync zoom from normal window if it exists
+            if (normalWindow != null)
+            {
+                currentZoomFactor = normalWindow.ZoomFactor;
+            }
+            
             if (transparentWindow == null)
             {
                 transparentWindow = new TransparentWindow(this, sampleImage);
                 transparentWindow.Closed += OnWindowClosed;
             }
             
+            // Apply current zoom factor
+            transparentWindow.ZoomFactor = currentZoomFactor;
+            
+            // Apply viewport clipping if normal window was visible
+            if (normalWindow != null && normalWindow.IsVisible)
+            {
+                ApplyViewportClipping();
+            }
+            
             HideNormalWindow();
             PositionWindow(transparentWindow, true);
             transparentWindow.Show();
             isTransparentMode = true;
+        }
+        
+        private void ApplyViewportClipping()
+        {
+            if (normalWindow == null || transparentWindow == null) return;
+            
+            // Note: This is a simplified implementation of viewport clipping
+            // In a full implementation, this would involve more complex clipping geometry
+            // For now, we'll use the same positioning as the original logic
+            // The transparent window will show the full image, positioned to align with the normal window
         }
         
         public void SwitchWindowMode()
